@@ -1,0 +1,102 @@
+# Déploiement de NewsFoundry
+
+Le même dépôt GitHub alimente deux déploiements : le frontend sur Vercel et le backend sur Railway. PostgreSQL est hébergé dans le même projet Railway que le backend.
+
+## Adresses de production
+
+- Frontend Vercel : à renseigner après le premier déploiement.
+- API Railway : à renseigner après génération du domaine public.
+
+## Préparer le dépôt
+
+1. Pousser les fichiers du projet sur la branche `main` du dépôt GitHub.
+2. Autoriser les intégrations GitHub de Vercel et Railway à accéder au dépôt.
+
+Les fichiers `.env` locaux ne sont pas publiés. Les variables de production sont configurées dans les plateformes.
+
+## Railway : PostgreSQL et backend
+
+### Créer les services
+
+1. Créer un projet Railway.
+2. Ajouter un service PostgreSQL et attendre qu'il soit disponible.
+3. Ajouter un service vide nommé `backend` pour configurer la racine et les variables avant le premier démarrage.
+
+### Configurer le backend
+
+| Réglage | Valeur |
+| --- | --- |
+| Root Directory | `/backend` |
+| Branche de déploiement | `main` |
+| Autodeploy | Activé |
+| Construction | Dockerfile détecté dans `/backend` |
+| Start Command | Conserver la commande du Dockerfile |
+| Healthcheck Path | `/` |
+| Watch Paths | Aucun filtre, pour déployer à chaque push sur `main` |
+
+Dans l'onglet **Variables** du backend, ajouter :
+
+```text
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+```
+
+Remplacer `Postgres` par le nom exact du service PostgreSQL. Utiliser la référence proposée par Railway : elle connecte le backend à PostgreSQL via le réseau privé du projet. L'adresse `localhost:5434` de la configuration locale ne s'applique pas sur Railway.
+
+Le backend écoute sur `0.0.0.0` et utilise la variable `PORT` fournie par Railway. En local, sans cette variable, il utilise le port `8000`.
+
+Après avoir configuré la racine et les variables, connecter le service au dépôt GitHub, sélectionner `main` et appliquer les réglages pour lancer le déploiement. La commande du Dockerfile exécute `src/main.py`, qui initialise la base avant de démarrer l'API.
+
+### Rendre l'API accessible
+
+Dans les réglages du service **backend**, ouvrir **Networking → Public Networking**, puis sélectionner **Generate Domain**. Vérifier que le port cible correspond au port d'écoute indiqué dans les logs.
+
+Ouvrir l'URL HTTPS générée. La route `/` doit renvoyer :
+
+```json
+{"message":"👋"}
+```
+
+La documentation FastAPI est également accessible sur `/docs`. Le service PostgreSQL reste accessible au backend par le réseau privé ; seul le backend a besoin d'un domaine HTTP public.
+
+## Vercel : frontend
+
+1. Importer le même dépôt GitHub dans un nouveau projet Vercel.
+2. Configurer les réglages suivants avant le déploiement :
+
+| Réglage | Valeur |
+| --- | --- |
+| Framework Preset | Next.js |
+| Root Directory | `frontend` |
+| Install Command | `npm ci` |
+| Build Command | `npm run build` |
+| Output Directory | Valeur automatique de Next.js |
+| Production Branch / Branch Tracking | `main` |
+| Skip deployment pour les projets non modifiés | Désactivé |
+| Ignored Build Step | Aucun script de filtrage |
+
+3. Lancer le déploiement et ouvrir l'URL HTTPS Vercel.
+
+Le frontend actuel n'appelle pas encore l'API : aucune variable de connexion au backend n'est nécessaire à ce stade. Lors de l'ajout des appels API, configurer son URL publique Railway. Si le navigateur appelle directement Railway, autoriser l'origine Vercel dans la configuration CORS du backend.
+
+## Vérifier les déploiements automatiques
+
+Un commit local ne suffit pas : il doit être poussé sur `main` dans GitHub.
+
+1. Pousser une modification de documentation sur `main`.
+2. Vérifier qu'un déploiement Vercel et un déploiement du backend Railway sont déclenchés.
+3. Vérifier que les deux déploiements utilisent le commit attendu et aboutissent.
+4. Ouvrir le frontend et la route `/` de l'API.
+5. Renseigner les deux adresses de production en haut de ce document.
+
+Les intégrations Git des plateformes suffisent pour ces déploiements automatiques. PostgreSQL conserve ses données entre les déploiements du backend ; son service n'est pas reconstruit à chaque commit applicatif.
+
+## Vérifier le Dockerfile en local
+
+Depuis la racine du dépôt, construire l'image avec **`backend/` comme contexte** :
+
+```bash
+docker build -t newsfoundry-backend ./backend
+```
+
+Le fichier `.dockerignore` exclut notamment les variables locales et l'environnement virtuel du contexte de construction. Les dépendances sont installées depuis `uv.lock` avec `--frozen --no-dev`, puis réutilisées au démarrage sans nouvelle synchronisation.
+

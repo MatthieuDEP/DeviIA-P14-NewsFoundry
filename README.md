@@ -60,15 +60,18 @@ Par ailleurs, pour faciliter la maintenance du projet à long terme, le code du 
 
 ### Deploiement
 
-L'url de l'application déployée devra être ajouté dans la documentation.
+Les étapes et réglages sont décrits dans le [guide de déploiement](docs/deploiement.md). Les URL publiques y seront renseignées après le premier déploiement.
 
 #### Frontend
 
-Déployer le frontend sur [Vercel](https://vercel.com/dashboard).
+Déployer le frontend sur [Vercel](https://vercel.com/dashboard), avec `frontend` comme **Root Directory** et `main` comme branche de production.
 
 #### Backend
 
 Déployer le backend sur [Railway](https://railway.com/dashboard).
 
-> Un Dockerfile est déjà présent pour faciliter le déploiement. Il faudra simplement référencer `backend/` comme "Root Directory" après avoir connecté le repository.
-> La base de donnée postgres peut être créée via Railway dans le même projet que le backend.
+Configurer `/backend` comme **Root Directory** et suivre la branche `main`. Railway utilise le Dockerfile de ce dossier.
+
+Créer PostgreSQL dans le même projet Railway et ajouter `DATABASE_URL` aux variables du backend comme référence vers le service PostgreSQL. Générer ensuite un domaine public pour le backend dans **Networking → Public Networking**.
+
+Les intégrations GitHub de Vercel et Railway doivent déclencher les déploiements à chaque push sur `main`.

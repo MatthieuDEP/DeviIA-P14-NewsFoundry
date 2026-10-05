@@ -2,11 +2,11 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 
 WORKDIR /app
 
-COPY backend/pyproject.toml backend/uv.lock ./
-RUN uv sync --frozen
+COPY pyproject.toml uv.lock README.md ./
+RUN uv sync --frozen --no-dev
 
-COPY backend/src/ ./src/
+COPY src/ ./src/
 
 EXPOSE 8000
 
-CMD ["uv", "run", "python", "src/main.py"]
+CMD ["uv", "run", "--no-sync", "python", "src/main.py"]
