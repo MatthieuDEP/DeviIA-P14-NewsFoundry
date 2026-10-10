@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
 from auth import router as auth_router
+from chats import router as chats_router
 from database import init_db
 
 app = FastAPI()
@@ -24,6 +25,7 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 app.include_router(auth_router)
+app.include_router(chats_router)
 
 
 @app.exception_handler(RequestValidationError)

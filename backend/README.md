@@ -53,9 +53,15 @@ Les hashes bcrypt sont conservés dans la base, sans journalisation SQL des para
 
 ```bash
 uv sync --frozen
-uv run --no-sync python -m unittest discover -s tests -v
+uv run --no-sync pytest -q
 ```
 
-Les tests utilisent une base SQLite en mémoire et couvrent les identifiants, les tokens expirés ou modifiés, CORS et les erreurs. Ils sont exécutés dans la GitHub Action `.github/workflows/ci.yml`, avec le lint et la compilation du frontend.
+Les tests utilisent SQLite en mémoire et couvrent l'authentification, les discussions et leurs autorisations. `TestModel` et `FunctionModel` remplacent Mistral, sans appels facturés. La GitHub Action `.github/workflows/ci.yml` exécute les tests, le lint et la compilation frontend.
 
 Sur Railway, ajouter `JWT_SECRET_KEY` avec une clé propre à la production et `CORS_ORIGINS` avec l'origine exacte du frontend Vercel. La variable `DATABASE_URL` reste configurée comme auparavant.
+
+## Chat Mistral
+
+Configurer `MISTRAL_API_KEY` dans `.env`, puis redémarrer le backend. Le modèle par défaut est `ministral-8b-latest`, configurable via `MISTRAL_MODEL`. La table `Chat` est créée au démarrage sans supprimer les données existantes.
+
+Les routes `/chats` et `/chats/{id}/messages` vérifient le JWT et le propriétaire de la discussion. Voir le [guide du chat](../docs/chat.md) pour le prompt, les routes, les erreurs et les tests.

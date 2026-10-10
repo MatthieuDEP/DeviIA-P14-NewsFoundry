@@ -14,3 +14,5 @@ wheels/
 # Instructions locales pour les assistants de programmation
 AGENTS.md
 CLAUDE.md
+
+.pytest_cache/

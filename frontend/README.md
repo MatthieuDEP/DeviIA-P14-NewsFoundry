@@ -26,10 +26,19 @@ Ouvrir `/connexion` et utiliser `test@test.com` avec le mot de passe `test`. Le 
 - `src/app/connexion/` : formulaire de connexion et CSS Module.
 - `src/lib/auth.js` : appels API et stockage du token.
 - `src/components/RobotIcon.jsx` : icône utilisée par les deux écrans.
+- `src/components/ChatWorkspace.jsx` : historique, sélection et envoi des messages.
+- `src/components/MessageBubble.jsx` : réponses affichées en Markdown.
+- `src/lib/chats.js` : appels API du chat.
 - `src/app/globals.css` : styles globaux.
 - `public/` : fichiers statiques.
 
 L'alias `@/*` pointe vers `src/*`. Pour les styles d'un composant, créer un fichier `*.module.css` et l'importer dans le composant.
+
+## Discussions
+
+Après connexion, démarrer une discussion ou reprendre son historique dans la barre latérale. L'adresse `/?chat=<id>` conserve la discussion ouverte au rechargement. Un loader s'affiche pendant la réponse ; en cas d'erreur, la saisie est conservée. Le Markdown des réponses est affiché sans interpréter le HTML du modèle.
+
+Voir le [guide du chat](../docs/chat.md).
 
 ## Vérifications
 

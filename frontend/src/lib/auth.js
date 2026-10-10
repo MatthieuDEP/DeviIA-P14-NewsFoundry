@@ -1,6 +1,6 @@
 export const TOKEN_KEY = "access_token";
 
-async function apiRequest(path, options = {}) {
+export async function apiRequest(path, options = {}, timeout = 10000) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) throw new Error("Le service est temporairement indisponible.");
 
@@ -9,7 +9,10 @@ async function apiRequest(path, options = {}) {
   try {
     response = await fetch(`${apiUrl.replace(/\/$/, "")}${path}`, {
       ...options,
-      signal: AbortSignal.timeout(10000),
+      cache: "no-store",
+      signal: options.signal
+        ? AbortSignal.any([options.signal, AbortSignal.timeout(timeout)])
+        : AbortSignal.timeout(timeout),
     });
     data = await response.json();
   } catch {
@@ -17,7 +20,7 @@ async function apiRequest(path, options = {}) {
   }
   if (!response.ok) {
     const error = new Error(
-      [401, 422, 503].includes(response.status) && typeof data?.detail === "string"
+      [401, 404, 409, 422, 429, 502, 503, 504].includes(response.status) && typeof data?.detail === "string"
         ? data.detail
         : "Le service est temporairement indisponible.",
     );

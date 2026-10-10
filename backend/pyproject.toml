@@ -11,9 +11,14 @@ dependencies = [
     "psycopg2-binary>=2.9.9",
     "bcrypt>=4.3.0",
     "pyjwt>=2.15.1",
+    "pydantic-ai-slim[mistral]>=2.55.0",
 ]
 
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "pytest>=9.1.1",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

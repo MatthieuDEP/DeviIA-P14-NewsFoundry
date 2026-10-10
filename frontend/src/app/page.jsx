@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import RobotIcon from "@/components/RobotIcon";
+import ChatWorkspace from "@/components/ChatWorkspace";
 import { getToken, getUser, logout } from "@/lib/auth";
 import styles from "./page.module.css";
 
@@ -42,14 +42,14 @@ export default function HomePage() {
     return () => { active = false; };
   }, [router, attempt]);
 
-  function handleLogout() {
+  const handleLogout = useCallback(() => {
     try {
       logout();
       router.replace("/connexion");
     } catch {
       setError("Votre navigateur ne permet pas de réinitialiser la connexion.");
     }
-  }
+  }, [router]);
 
   if (!user) {
     return (
@@ -70,34 +70,5 @@ export default function HomePage() {
     );
   }
 
-  return (
-    <div className={styles.page}>
-      <a className={styles.skipLink} href="#main-content">Aller au contenu</a>
-      <aside className={styles.sidebar} aria-label="Votre compte">
-        <div className={styles.brand}>NEWSFOUNDRY <RobotIcon size={18} /></div>
-        <div className={styles.account}>
-          <p>VOTRE COMPTE</p>
-          <span>{user.email}</span>
-        </div>
-        <button type="button" className={styles.logout} onClick={handleLogout}>
-          Se déconnecter
-        </button>
-        {error && <p role="alert" className={styles.logoutError}>{error}</p>}
-      </aside>
-      <div className={styles.workspace}>
-        <header className={styles.header}><span>Votre espace</span></header>
-        <main id="main-content" className={styles.main} tabIndex={-1}>
-          <section className={styles.card} aria-labelledby="welcome-title">
-            <div className={styles.robot}><RobotIcon size={80} /></div>
-            <h1 id="welcome-title">Assistant Revue de Presse IA</h1>
-            <p>Bienvenue dans votre espace NewsFoundry.</p>
-            <div className={styles.identity}>
-              <strong>Connexion réussie</strong>
-              <span>{user.email}</span>
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
-  );
+  return <ChatWorkspace user={user} onLogout={handleLogout} sessionError={error} />;
 }
