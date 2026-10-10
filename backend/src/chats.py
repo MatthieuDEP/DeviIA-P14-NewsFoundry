@@ -5,12 +5,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic_ai import ModelMessagesTypeAdapter
+from pydantic_ai.messages import UserPromptPart
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError, UnexpectedModelBehavior, UserError
 from sqlalchemy import update
 from sqlmodel import Session, select
 
 from auth import get_current_user
-from chat_agent import as_utc, chat_agent, public_messages
+from chat_agent import as_utc, chat_agent, initial_history, public_messages
 from database import get_session
 from models import Chat, User, utc_now
 
@@ -52,12 +53,18 @@ def chat_info(chat):
 
 
 @router.post("", status_code=201)
-def create_chat(
+async def create_chat(
     response: Response,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
-    chat = Chat(user_id=user.id)
+    owner_id = user.id
+    session.rollback()
+    history = await initial_history()
+    chat = Chat(
+        user_id=owner_id,
+        messages=ModelMessagesTypeAdapter.dump_python(history, mode="json"),
+    )
     session.add(chat)
     session.commit()
     session.refresh(chat)
@@ -111,6 +118,9 @@ async def add_message(
     history = ModelMessagesTypeAdapter.validate_python(chat.messages)
     # Libérer la connexion de lecture pendant l'attente réseau du modèle.
     session.rollback()
+    # Une discussion vide créée avant l'ajout des actualités reçoit aussi un contexte.
+    if not history:
+        history = await initial_history()
     try:
         result = await asyncio.wait_for(
             chat_agent.run(body.content, message_history=history), timeout=50,
@@ -132,7 +142,7 @@ async def add_message(
         raise HTTPException(502, "L’assistant n’a pas pu répondre. Réessayez.")
     saved_history = ModelMessagesTypeAdapter.dump_python(result.all_messages(), mode="json")
     updated_at = utc_now()
-    if not history:
+    if not any(isinstance(part, UserPromptPart) for message in history for part in message.parts):
         title = body.content[:80]
     # Une seconde requête ne doit pas écraser un échange enregistré entre-temps.
     changed = session.execute(

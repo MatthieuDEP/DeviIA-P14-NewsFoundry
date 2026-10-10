@@ -42,6 +42,7 @@ JWT_SECRET_KEY=<clé aléatoire propre à la production>
 CORS_ORIGINS=https://<domaine-du-frontend-vercel>
 MISTRAL_API_KEY=<clé privée Mistral>
 MISTRAL_MODEL=ministral-8b-latest
+WORLD_NEWS_API_KEY=<clé privée World News API>
 ```
 
 Remplacer `Postgres` par le nom exact du service PostgreSQL. Utiliser la référence proposée par Railway : elle connecte le backend à PostgreSQL via le réseau privé du projet. L'adresse `localhost:5434` de la configuration locale ne s'applique pas sur Railway.
@@ -84,7 +85,7 @@ Configurer `NEXT_PUBLIC_API_URL` dans les variables Vercel avec l'URL HTTPS publ
 
 Générer une clé JWT de production avec `python3 -c "import secrets; print(secrets.token_hex(32))"` et renseigner `JWT_SECRET_KEY` dans Railway. Ne pas utiliser les textes de remplacement ci-dessus comme valeurs réelles. Le compte de test est `test@test.com`, avec le mot de passe `test`.
 
-Configurer aussi `MISTRAL_API_KEY` dans Railway pour les réponses du chat. `MISTRAL_MODEL` sélectionne le modèle ; `ministral-8b-latest` est la valeur par défaut. Voir le [guide du chat](chat.md).
+Configurer aussi `MISTRAL_API_KEY` et `WORLD_NEWS_API_KEY` dans Railway pour les réponses du chat et les actualités. `MISTRAL_MODEL` sélectionne le modèle ; `ministral-8b-latest` est la valeur par défaut. Voir le [guide du chat](chat.md).
 
 ## Vérifier les déploiements automatiques
 

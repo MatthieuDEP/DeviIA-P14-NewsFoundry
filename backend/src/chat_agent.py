@@ -4,16 +4,18 @@ import os
 from datetime import timezone
 
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelRequest, ModelResponse, TextPart, UserPromptPart
+from pydantic_ai.messages import ModelRequest, ModelResponse, SystemPromptPart, TextPart, UserPromptPart
+
+from news import fetch_top_news, news_context
 
 SYSTEM_PROMPT = """Tu es NewsFoundry, un assistant de discussion et de revue de presse.
 Réponds en français, de manière claire, concise et factuelle. Utilise le contexte
 de la discussion et pose une question de clarification lorsque c'est nécessaire.
 Tu peux utiliser du Markdown simple pour structurer les réponses.
 N'invente jamais de sources, de citations, de chiffres ni de dates.
-À cette étape tu n'as pas d'accès au web ni à une source d'actualités en temps réel.
-Si une question exige des informations récentes que tu ne peux pas vérifier,
-indique cette limite et distingue les informations connues des hypothèses.
+Tu n'as pas d'accès direct au web. Si un contexte d'actualités est fourni,
+utilise-le en respectant sa date. Sinon, indique que tu ne peux pas vérifier
+les actualités récentes. Distingue les informations connues des hypothèses.
 """
 
 chat_agent = Agent(
@@ -23,6 +25,12 @@ chat_agent = Agent(
     model_settings={"timeout": 45, "max_tokens": 2048},
     retries=0,
 )
+
+
+async def initial_history():
+    """Figer le prompt avant le premier échange, y compris si le LLM échoue."""
+    snapshot = await fetch_top_news()
+    return [ModelRequest(parts=[SystemPromptPart(SYSTEM_PROMPT + news_context(snapshot))])]
 
 
 def public_messages(history):

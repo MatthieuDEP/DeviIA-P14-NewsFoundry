@@ -108,7 +108,7 @@ def test_history_is_saved_in_json_and_reused_as_context(client, owner_headers):
         stored = session.get(Chat, chat_id)
         assert isinstance(stored.messages, list)
         history = ModelMessagesTypeAdapter.validate_python(stored.messages)
-        assert any(isinstance(part, SystemPromptPart) and part.content == SYSTEM_PROMPT for message in history for part in message.parts)
+        assert any(isinstance(part, SystemPromptPart) and part.content.startswith(SYSTEM_PROMPT) for message in history for part in message.parts)
         assert stored.revision == 2
 
 

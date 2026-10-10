@@ -18,7 +18,7 @@ export function listChats(options) {
 }
 
 export function createChat() {
-  return chatRequest("/chats", { method: "POST" });
+  return chatRequest("/chats", { method: "POST" }, 15000);
 }
 
 export function getChat(id, options) {

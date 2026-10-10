@@ -24,6 +24,12 @@ def no_external_llm_requests(monkeypatch):
 
 @pytest.fixture
 def client(monkeypatch):
+    from unittest.mock import AsyncMock
+    import chat_agent as agent_module
+    monkeypatch.setattr(agent_module, "fetch_top_news", AsyncMock(return_value={
+        "date": "2026-10-10",
+        "articles": [{"title": "Actualité de test", "summary": "Résumé de test."}],
+    }))
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     monkeypatch.setattr(database, "engine", engine)
     monkeypatch.setenv("JWT_SECRET_KEY", "chat-tests-secret-not-for-production-123456")

@@ -13,6 +13,7 @@ Ajouter dans `backend/.env` et dans les variables Railway :
 ```text
 MISTRAL_API_KEY=<clé privée>
 MISTRAL_MODEL=ministral-8b-latest
+WORLD_NEWS_API_KEY=<clé privée World News API>
 ```
 
 La clé reste exclusivement dans le backend. La variable du modèle contient son nom sans le préfixe `mistral:` utilisé par PydanticAI. Redémarrer le backend après changement des variables.
@@ -23,6 +24,7 @@ Le modèle par défaut est [Ministral 3 8B](https://docs.mistral.ai/models/minis
 
 - `models.py` : `Chat`, propriétaire, titre, dates, historique JSON et compteur de révision.
 - `chat_agent.py` : agent PydanticAI Mistral, prompt et conversion des messages visibles.
+- `news.py` : appel à World News API et sélection des titres et résumés.
 - `chats.py` : routes, contrôle d'accès et sauvegarde.
 - `frontend/src/lib/chats.js` : appels authentifiés avec le JWT existant.
 - `ChatWorkspace.jsx` : historique, sélection et formulaire.
@@ -38,7 +40,15 @@ Le compteur `revision` empêche une requête concurrente d'écraser un échange 
 
 NewsFoundry répond en français, de façon concise et factuelle, en tenant compte de la discussion. Le prompt demande de clarifier les ambiguïtés et interdit les sources et citations inventées.
 
-Cette étape ne fournit pas encore de recherche d'actualités : le modèle doit signaler les informations récentes qu'il ne peut pas vérifier. Cette règle sera adaptée lors de l'intégration de sources d'actualités.
+À la création de chaque discussion, le backend appelle `GET https://api.worldnewsapi.com/top-news` avec `source-country=fr`, `language=fr` et la date du jour en Europe/Paris. La clé est transmise par le header `x-api-key`, uniquement depuis le backend.
+
+Le contexte retient un article par sujet, en privilégiant les résumés disponibles. Il contient au maximum dix titres (200 caractères chacun) et résumés (800 caractères chacun). Les doublons de titre sont retirés. Le champ `text` n'est jamais intégré ; un résumé absent est signalé comme tel. Aucun appel LLM supplémentaire n'est nécessaire.
+
+Le prompt complet, daté, est enregistré dans un `SystemPromptPart` du JSON `Chat.messages` dès la création, avant tout appel à Mistral. PydanticAI réutilise ensuite cet historique sans rappeler World News API. Le modèle doit s'appuyer sur ces actualités, indiquer leur date et signaler les informations non disponibles. Les articles sont présentés comme des données externes et non comme des instructions.
+
+Une discussion reprise le lendemain conserve donc le contexte du jour de sa création. Créer une nouvelle discussion pour obtenir les actualités du jour. Les discussions antérieures à cette fonctionnalité conservent aussi leur prompt initial ; une ancienne discussion encore vide reçoit le contexte lors de son premier échange réussi.
+
+L'appel d'actualités est limité à dix secondes. Une clé manquante, une erreur réseau, un quota épuisé ou des résultats vides empêchent la création et produisent un message explicite, sans inventer d'actualités ni créer de discussion incomplète. Les discussions existantes restent accessibles. Un appel est effectué par nouvelle discussion ; les limites du compte World News API s'appliquent.
 
 ## API
 
@@ -46,7 +56,7 @@ Toutes les routes exigent `Authorization: Bearer <JWT>`.
 
 | Route | Résultat |
 | --- | --- |
-| `POST /chats` | Crée une discussion personnelle et retourne son `id` |
+| `POST /chats` | Charge les actualités, sauvegarde le prompt et crée une discussion personnelle |
 | `GET /chats` | Liste uniquement les discussions de l'utilisateur |
 | `GET /chats/{id}` | Retourne les messages de sa discussion |
 | `POST /chats/{id}/messages` | Reçoit `{"content":"Votre message"}` et retourne `reply` ainsi que l'historique sauvegardé |
@@ -74,9 +84,11 @@ uv sync --frozen
 uv run --no-sync pytest -q
 ```
 
-SQLite en mémoire, `TestModel`, `FunctionModel` et `Agent.override` isolent les tests. `ALLOW_MODEL_REQUESTS=False` interdit les appels réels.
+SQLite en mémoire, `TestModel`, `FunctionModel` et `Agent.override` isolent les tests. `ALLOW_MODEL_REQUESTS=False` interdit les appels LLM réels. `httpx.MockTransport` simule les réponses de World News API et ses erreurs.
 
 Les tests couvrent les accès autorisés, les lectures et modifications interdites sur les discussions d'autrui, la liste filtrée, la persistance JSON, la reprise du contexte, les erreurs IA et les conflits de sauvegarde. Pytest collecte aussi les tests d'authentification existants. La GitHub Action lance les tests, le lint frontend et la compilation sur les pushes et pull requests de `main`.
+
+Les tests d'actualités vérifient la sélection sans contenu complet, le bornage du contexte, les erreurs et quotas, la sauvegarde avant le premier message et la stabilité du prompt lors d'une reprise le lendemain. Une nouvelle discussion reçoit le nouveau contexte.
 
 ## Piste d'optimisation
 
@@ -88,3 +100,5 @@ Sur un jeu de discussions de 50 à 100 échanges, mesurer les tokens d'entrée e
 - [PydanticAI : historique](https://ai.pydantic.dev/message-history/)
 - [PydanticAI : tests](https://ai.pydantic.dev/testing/)
 - [PydanticAI : Mistral](https://ai.pydantic.dev/models/mistral/)
+- [World News API : Top News](https://worldnewsapi.com/docs/top-news/)
+- [World News API : authentification](https://worldnewsapi.com/docs/authentication/)

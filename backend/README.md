@@ -65,3 +65,9 @@ Sur Railway, ajouter `JWT_SECRET_KEY` avec une clé propre à la production et `
 Configurer `MISTRAL_API_KEY` dans `.env`, puis redémarrer le backend. Le modèle par défaut est `ministral-8b-latest`, configurable via `MISTRAL_MODEL`. La table `Chat` est créée au démarrage sans supprimer les données existantes.
 
 Les routes `/chats` et `/chats/{id}/messages` vérifient le JWT et le propriétaire de la discussion. Voir le [guide du chat](../docs/chat.md) pour le prompt, les routes, les erreurs et les tests.
+
+## Actualités World News API
+
+Configurer `WORLD_NEWS_API_KEY` dans `.env` et dans Railway, puis redémarrer le backend. À la création d'une discussion, `/top-news` charge les actualités françaises du jour (date en Europe/Paris). Le prompt contient jusqu'à dix titres et résumés, et reste enregistré dans le champ JSON `Chat.messages` pour toute la discussion. Aucune migration n'est nécessaire.
+
+Une ancienne discussion conserve son contexte d'origine ; créer une nouvelle discussion pour obtenir les dernières actualités. En cas de clé absente, quota dépassé ou actualités indisponibles, l'application affiche une erreur sans créer une discussion incomplète. Les tests simulent World News API avec `httpx.MockTransport`, sans consommer son quota.
