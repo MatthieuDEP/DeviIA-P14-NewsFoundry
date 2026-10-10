@@ -1,0 +1,25 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background-color: #2a2a31;
+  background-image: linear-gradient(#ffffff0a 3px, transparent 3px), linear-gradient(90deg, #ffffff0a 3px, transparent 3px);
+  background-size: 78px 78px;
+  background-position: -13px -27px;
+}
+.card { width: min(100%, 448px); padding: 48px 32px; border-radius: 14px; background: white; }
+.brand { display: flex; justify-content: center; align-items: center; gap: 8px; margin-bottom: 20px; color: var(--accent); font-size: 24px; font-weight: 400; }
+.description { max-width: 340px; margin: 0 auto 26px; color: var(--muted); font-size: 14px; line-height: 1.5; text-align: center; }
+.form { display: grid; gap: 20px; }
+.field { display: grid; gap: 10px; }
+.field label { font-size: 16px; }
+.field input { min-width: 0; width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; background: #eceef2; color: var(--text); font-size: 14px; }
+.field input::placeholder { color: var(--muted); opacity: 1; }
+.field input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+.field input:disabled { opacity: .7; }
+.form button { min-height: 44px; padding: 12px; border: 0; border-radius: 4px; background: #2a2a31; color: white; font-size: 14px; }
+.form button:hover:not(:disabled) { background: var(--accent); }
+.form button:disabled { opacity: .65; cursor: wait; }
+.error { color: #a32332; font-size: 14px; line-height: 1.5; }
+@media (max-width: 480px) { .card { padding: 36px 24px; } }

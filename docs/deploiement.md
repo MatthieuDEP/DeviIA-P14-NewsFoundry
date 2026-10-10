@@ -38,6 +38,8 @@ Dans l'onglet **Variables** du backend, ajouter :
 
 ```text
 DATABASE_URL=${{Postgres.DATABASE_URL}}
+JWT_SECRET_KEY=<clé aléatoire propre à la production>
+CORS_ORIGINS=https://<domaine-du-frontend-vercel>
 ```
 
 Remplacer `Postgres` par le nom exact du service PostgreSQL. Utiliser la référence proposée par Railway : elle connecte le backend à PostgreSQL via le réseau privé du projet. L'adresse `localhost:5434` de la configuration locale ne s'applique pas sur Railway.
@@ -76,7 +78,9 @@ La documentation FastAPI est également accessible sur `/docs`. Le service Postg
 
 3. Lancer le déploiement et ouvrir l'URL HTTPS Vercel.
 
-Le frontend actuel n'appelle pas encore l'API : aucune variable de connexion au backend n'est nécessaire à ce stade. Lors de l'ajout des appels API, configurer son URL publique Railway. Si le navigateur appelle directement Railway, autoriser l'origine Vercel dans la configuration CORS du backend.
+Configurer `NEXT_PUBLIC_API_URL` dans les variables Vercel avec l'URL HTTPS publique du backend Railway, puis redéployer le frontend. Les appels de connexion partent du navigateur vers Railway. Dans Railway, `CORS_ORIGINS` doit contenir l'origine exacte de Vercel, sans slash final. Plusieurs origines peuvent être séparées par des virgules.
+
+Générer une clé JWT de production avec `python3 -c "import secrets; print(secrets.token_hex(32))"` et renseigner `JWT_SECRET_KEY` dans Railway. Ne pas utiliser les textes de remplacement ci-dessus comme valeurs réelles. Le compte de test est `test@test.com`, avec le mot de passe `test`.
 
 ## Vérifier les déploiements automatiques
 
@@ -99,4 +103,3 @@ docker build -t newsfoundry-backend ./backend
 ```
 
 Le fichier `.dockerignore` exclut notamment les variables locales et l'environnement virtuel du contexte de construction. Les dépendances sont installées depuis `uv.lock` avec `--frozen --no-dev`, puis réutilisées au démarrage sans nouvelle synchronisation.
-

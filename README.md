@@ -25,10 +25,13 @@
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
 Le frontend est accessible sur `http://localhost:3000`. Voir `frontend/README.md` pour plus de détails.
+
+La connexion est disponible sur `/connexion` avec `test@test.com` et le mot de passe `test`. Le JWT est enregistré dans le local storage. Configurer `JWT_SECRET_KEY` et `CORS_ORIGINS` dans le backend, et `NEXT_PUBLIC_API_URL` dans le frontend, comme indiqué dans leurs README.
 
 ## Choix technologiques
 

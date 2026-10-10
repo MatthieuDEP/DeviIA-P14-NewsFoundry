@@ -4,7 +4,21 @@ from sqlmodel import SQLModel, Session, create_engine, select
 import bcrypt
 
 DATABASE_URL = os.getenv("DATABASE_URL")
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session
+
+
+def normalize_password_hash(value):
+    if isinstance(value, bytes):
+        return value.decode("utf-8")
+    # Compatibilité avec les hashes binaires insérés par l'ancien seed PostgreSQL.
+    if value.startswith("\\x"):
+        return bytes.fromhex(value[2:]).decode("utf-8")
+    return value
 
 
 def init_db():
@@ -25,7 +39,13 @@ def init_db():
                     email=default_email,
                     hashed_password=bcrypt.hashpw(
                         default_password.encode("utf-8"), bcrypt.gensalt()
-                    ),
+                    ).decode("utf-8"),
                 )
             )
             session.commit()
+        else:
+            normalized_hash = normalize_password_hash(user.hashed_password)
+            if normalized_hash != user.hashed_password:
+                user.hashed_password = normalized_hash
+                session.add(user)
+                session.commit()
